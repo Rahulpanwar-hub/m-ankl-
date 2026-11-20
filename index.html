@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Magnetic Effects of Electric Current — Virtual Physics Lab</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    input[type="range"] {
+      accent-color: #2563eb;
+      cursor: pointer;
+    }
+    .canvas-container {
+      touch-action: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-30 flex min-h-[60px] flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2">
+    <div class="flex items-center gap-3">
+      <div class="flex h-11 w-12 items-center justify-center rounded-xl bg-blue-50 text-2xl">
+        🧲
+      </div>
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">Magnetic Effects of Electric Current Lab</h1>
+        <p class="text-sm text-slate-500">
+          Class 10 / 12 NCERT Physics — Right-Hand Thumb Rule, Solenoid &amp; Fleming's Left-Hand Rule
+        </p>
+      </div>
+    </div>
+
+    <!-- EXPERIMENT SWITCHER & RESET -->
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="flex flex-wrap rounded-lg border border-slate-200 bg-slate-100 p-1 text-xs font-bold">
+        <button
+          onclick="switchExperiment('wire')"
+          id="exp-wire"
+          class="exp-btn rounded-md bg-blue-600 px-3 py-1.5 text-white shadow-sm transition"
+        >
+          1. Straight Wire (Oersted)
+        </button>
+        <button
+          onclick="switchExperiment('solenoid')"
+          id="exp-solenoid"
+          class="exp-btn rounded-md px-3 py-1.5 text-slate-600 hover:text-slate-900 transition"
+        >
+          2. Solenoid Electromagnet
+        </button>
+        <button
+          onclick="switchExperiment('lorentz')"
+          id="exp-lorentz"
+          class="exp-btn rounded-md px-3 py-1.5 text-slate-600 hover:text-slate-900 transition"
+        >
+          3. Force on Conductor (Kick Wire)
+        </button>
+      </div>
+
+      <button
+        onclick="resetLab()"
+        class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50"
+      >
+        ↺ Reset
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN SIMULATION VIEWPORT -->
+  <section class="border-b border-slate-200 bg-white">
+    <div class="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+      <div>
+        <h2 id="expTitle" class="font-bold text-blue-700">
+          1. Magnetic Field Due to a Straight Current-Carrying Conductor
+        </h2>
+        <p id="expSubtitle" class="text-xs text-slate-500">
+          Drag the magnetic compass around the vertical wire to verify concentric circular field lines (Right-Hand Thumb Rule)
+        </p>
+      </div>
+
+      <div class="flex flex-wrap gap-4 text-xs font-semibold">
+        <span class="flex items-center gap-2">
+          <span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span> Conventional Current (I)
+        </span>
+        <span class="flex items-center gap-2">
+          <span class="h-2.5 w-2.5 rounded-full bg-emerald-600"></span> Magnetic Field (B)
+        </span>
+        <span class="flex items-center gap-2">
+          <span class="h-2.5 w-2.5 rounded-full bg-red-600"></span> North Pole / Force (F)
+        </span>
+        <span class="flex items-center gap-2">
+          <span class="h-2.5 w-2.5 rounded-full bg-blue-600"></span> South Pole
+        </span>
+      </div>
+    </div>
+
+    <div class="canvas-container relative overflow-x-auto px-2 py-2">
+      <canvas
+        id="magCanvas"
+        width="1100"
+        height="400"
+        class="mx-auto block w-full max-w-[1100px] cursor-grab rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white"
+      ></canvas>
+    </div>
+
+    <!-- QUICK ACTION BAR -->
+    <div class="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          id="btnTogglePower"
+          onclick="togglePower()"
+          class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-bold text-white hover:bg-blue-700"
+        >
+          ⚡ Switch: ON (5.0 A)
+        </button>
+
+        <button
+          onclick="reverseCurrent()"
+          class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-100"
+        >
+          ⇄ Reverse Current Direction
+        </button>
+
+        <button
+          id="btnToggleCore"
+          onclick="toggleSoftIronCore()"
+          class="hidden rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-800 hover:bg-indigo-100"
+        >
+          🧲 Insert Soft Iron Core (μᵣ = 50)
+        </button>
+
+        <button
+          id="btnFlipMagnet"
+          onclick="flipHorseshoeMagnet()"
+          class="hidden rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-bold text-red-800 hover:bg-red-100"
+        >
+          🔄 Flip Magnet Poles (N ↔ S)
+        </button>
+      </div>
+
+      <div id="ruleBadge" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-xs font-bold text-emerald-900">
+        Right-Hand Thumb Rule: Thumb UP (Current) → Fingers curl ANTI-CLOCKWISE (Field B)
+      </div>
+    </div>
+  </section>
+
+  <!-- LOWER DASHBOARD -->
+  <main class="grid grid-cols-1 gap-4 p-4 lg:grid-cols-3">
+    <!-- PARAMETERS -->
+    <section class="rounded-xl border border-slate-200 bg-white p-4">
+      <h2 class="mb-4 border-b border-slate-100 pb-3 text-lg font-bold">
+        🎚 Circuit &amp; Field Controls
+      </h2>
+
+      <!-- Current Slider -->
+      <div class="mb-4">
+        <div class="mb-1.5 flex items-center justify-between">
+          <label class="text-sm font-semibold">Electric Current (I)</label>
+          <span id="valCurrent" class="rounded-md bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
+            5.0 A
+          </span>
+        </div>
+        <input id="sliderCurrent" type="range" min="0" max="10" step="0.5" value="5.0" class="w-full" />
+        <div class="mt-1 flex justify-between text-xs text-slate-400">
+          <span>0 A (Off)</span>
+          <span>10 A (Max)</span>
+        </div>
+      </div>
+
+      <!-- Solenoid Turns Slider -->
+      <div id="ctrlTurns" class="mb-4 hidden">
+        <div class="mb-1.5 flex items-center justify-between">
+          <label class="text-sm font-semibold">Solenoid Turns (N)</label>
+          <span id="valTurns" class="rounded-md bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700">
+            12 turns
+          </span>
+        </div>
+        <input id="sliderTurns" type="range" min="4" max="20" step="2" value="12" class="w-full" />
+        <div class="mt-1 flex justify-between text-xs text-slate-400">
+          <span>4 turns</span>
+          <span>20 turns</span>
+        </div>
+      </div>
+
+      <!-- Magnet Strength Slider (For Kick-Wire Mode) -->
+      <div id="ctrlMagField" class="mb-4 hidden">
+        <div class="mb-1.5 flex items-center justify-between">
+          <label class="text-sm font-semibold">Permanent Magnet Field (B)</label>
+          <span id="valExtB" class="rounded-md bg-red-50 px-2 py-1 text-xs font-bold text-red-700">
+            0.40 T
+          </span>
+        </div>
+        <input id="sliderExtB" type="range" min="0.1" max="1.0" step="0.05" value="0.40" class="w-full" />
+        <div class="mt-1 flex justify-between text-xs text-slate-400">
+          <span>0.10 T</span>
+          <span>1.00 T</span>
+        </div>
+      </div>
+
+      <!-- Compass Radial Distance (For Straight Wire Mode) -->
+      <div id="ctrlRadius" class="mb-4">
+        <div class="mb-1.5 flex items-center justify-between">
+          <label class="text-sm font-semibold">Compass Distance from Wire (r)</label>
+          <span id="valRadius" class="rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
+            5.0 cm
+          </span>
+        </div>
+        <input id="sliderRadius" type="range" min="2" max="12" step="0.5" value="5.0" class="w-full" />
+        <div class="mt-1 flex justify-between text-xs text-slate-400">
+          <span>2.0 cm (Strong)</span>
+          <span>12.0 cm (Weak)</span>
+        </div>
+      </div>
+
+      <!-- Display Options -->
+      <div class="space-y-2 border-t border-slate-100 pt-3 text-sm">
+        <label class="flex cursor-pointer items-center gap-2">
+          <input id="chkFieldLines" type="checkbox" checked class="h-4 w-4 rounded" />
+          <span>Show Magnetic Field Lines</span>
+        </label>
+        <label class="flex cursor-pointer items-center gap-2">
+          <input id="chkCurrentFlow" type="checkbox" checked class="h-4 w-4 rounded" />
+          <span>Show Moving Current Charges</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- LIVE METRICS -->
+    <section class="rounded-xl border border-slate-200 bg-white p-4">
+      <h2 class="mb-4 border-b border-slate-100 pb-3 text-lg font-bold">
+        ✨ Live Magnetic &amp; Force Readings
+      </h2>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <p id="card1Title" class="text-[10px] font-bold tracking-wide text-slate-500">MAGNETIC FIELD AT COMPASS</p>
+          <p id="card1Val" class="mt-2 text-2xl font-bold text-emerald-600">20.0 μT</p>
+          <p id="card1Sub" class="text-xs font-semibold text-slate-600">B = (μ₀ · I) / (2π · r)</p>
+          <p id="card1Hint" class="mt-1 text-[10px] text-slate-500">Inversely proportional to r</p>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <p id="card2Title" class="text-[10px] font-bold tracking-wide text-slate-500">FIELD DIRECTION</p>
+          <p id="card2Val" class="mt-2 text-xl font-bold text-blue-600">Anti-Clockwise</p>
+          <p id="card2Sub" class="text-xs font-semibold text-slate-600">Viewed from above</p>
+          <p id="card2Hint" class="mt-1 text-[10px] text-slate-500">Right-Hand Thumb Rule</p>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <p id="card3Title" class="text-[10px] font-bold tracking-wide text-slate-500">CURRENT DIRECTION</p>
+          <p id="card3Val" class="mt-2 text-xl font-bold text-amber-600">Upward (↑)</p>
+          <p id="card3Sub" class="text-xs font-semibold text-slate-600">Conventional (+ to −)</p>
+          <p id="card3Hint" class="mt-1 text-[10px] text-slate-500">Battery polarity</p>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <p id="card4Title" class="text-[10px] font-bold tracking-wide text-slate-500">COMPASS NEEDLE ANGLE</p>
+          <p id="card4Val" class="mt-2 text-2xl font-bold text-purple-600">0°</p>
+          <p id="card4Sub" class="text-xs font-semibold text-slate-600">Tangent to field circle</p>
+          <p id="card4Hint" class="mt-1 text-[10px] text-slate-500">Drag compass to test</p>
+        </div>
+      </div>
+
+      <div id="ncertInsightBox" class="mt-4 rounded-lg bg-blue-50 p-3 text-xs leading-5 text-blue-950">
+        <strong>Oersted's Discovery:</strong> An electric current flowing through a metallic conductor produces a magnetic field around it. Increasing current increases deflection; moving the compass farther away decreases field strength.
+      </div>
+    </section>
+
+    <!-- LIVE EQUATIONS & B-FIELD GRAPH -->
+    <section class="rounded-xl border border-slate-200 bg-white p-4">
+      <div class="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
+        <h2 id="graphHeader" class="text-lg font-bold">📈 Field Strength (B) vs Distance (r)</h2>
+        <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+          Live Curve
+        </span>
+      </div>
+
+      <!-- Live Graph Canvas -->
+      <canvas
+        id="fieldGraphCanvas"
+        width="420"
+        height="165"
+        class="mb-3 w-full rounded-lg border border-slate-200 bg-white"
+      ></canvas>
+
+      <div class="space-y-2.5 font-mono text-xs">
+        <div class="rounded-lg bg-slate-50 p-2.5 leading-5">
+          <p id="derivTitle1" class="font-bold text-slate-700">1. Biot-Savart / Ampere Formula:</p>
+          <p id="derivFormula1">B = (μ₀ · I) / (2π · r)</p>
+          <p id="derivSub1">= (4π × 10⁻⁷ × 5.0) / (2π × 0.05)</p>
+          <p id="derivRes1" class="font-bold text-emerald-700">= 20.0 μT (microTesla)</p>
+        </div>
+
+        <div class="rounded-lg bg-slate-50 p-2.5 leading-5">
+          <p class="font-bold text-slate-700">2. Permeability Constant (μ₀):</p>
+          <p class="text-slate-600">μ₀ = 4π × 10⁻⁷ T·m/A</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-200 bg-white px-4 py-4 text-center text-xs text-slate-500">
+    Magnetic Effects of Electric Current Virtual Lab | Straight Conductor | Solenoid | Fleming's Left-Hand Rule
+  </footer>
+
+  <!-- ===================================================================== -->
+  <!-- JAVASCRIPT PHYSICS ENGINE & INTERACTIVE RENDERER                      -->
+  <!-- ===================================================================== -->
+  <script>
+    const canvas = document.getElementById("magCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const graphCanvas = document.getElementById("fieldGraphCanvas");
+    const gCtx = graphCanvas.getContext("2d");
+
+    const MU0 = 4 * Math.PI * 1e-7;
+
+    const state = {
+      experiment: "wire", // 'wire' | 'solenoid' | 'lorentz'
+      current: 5.0,       // Amperes (0..10)
+      savedCurrent: 5.0,
+      polarity: 1,        // 1 or -1
+      // Wire mode
+      compassAngleAroundWire: 0, // radians
+      compassRadiusCm: 5.0,      // 2..12 cm
+      draggingCompass: false,
+      // Solenoid mode
+      turns: 12,
+      muR: 1,
+      solCompassX: 550,
+      solCompassY: 90,
+      // Lorentz (Kick-wire) mode
+      extB: 0.40,         // Tesla
+      magnetPolarity: 1,  // 1: Top=N, Bottom=S | -1: Top=S, Bottom=N
+      rodSwingAngle: 0,   // radians
+      rodSwingVel: 0,
+      // Visual flags
+      showFieldLines: true,
+      showCurrentFlow: true,
+      animPhase: 0,
+    };
+
+    // DOM Controls
+    const sliderCurrent = document.getElementById("sliderCurrent");
+    const sliderTurns = document.getElementById("sliderTurns");
+    const sliderExtB = document.getElementById("sliderExtB");
+    const sliderRadius = document.getElementById("sliderRadius");
+
+    sliderCurrent.addEventListener("input", (e) => {
+      state.current = parseFloat(e.target.value);
+      if (state.current > 0) state.savedCurrent = state.current;
+      updateUI();
+    });
+
+    sliderTurns.addEventListener("input", (e) => {
+      state.turns = parseInt(e.target.value, 10);
+      updateUI();
+    });
+
+    sliderExtB.addEventListener("input", (e) => {
+      state.extB = parseFloat(e.target.value);
+      updateUI();
+    });
+
+    sliderRadius.addEventListener("input", (e) => {
+      state.compassRadiusCm = parseFloat(e.target.value);
+      updateUI();
+    });
+
+    document.getElementById("chkFieldLines").addEventListener("change", (e) => {
+      state.showFieldLines = e.target.checked;
+    });
+
+    document.getElementById("chkCurrentFlow").addEventListener("change", (e) => {
+      state.showCurrentFlow = e.target.checked;
+    });
+
+    function switchExperiment(exp) {
+      state.experiment = exp;
+      document.querySelectorAll(".exp-btn").forEach((btn) => {
+        btn.className = "exp-btn rounded-md px-3 py-1.5 text-slate-600 hover:text-slate-900 transition";
+      });
+      document.getElementById(`exp-${exp}`).className =
+        "exp-btn rounded-md bg-blue-600 px-3 py-1.5 text-white shadow-sm transition";
+
+      // Toggle contextual controls
+      document.getElementById("ctrlRadius").classList.toggle("hidden", exp !== "wire");
+      document.getElementById("ctrlTurns").classList.toggle("hidden", exp !== "solenoid");
+      document.getElementById("ctrlMagField").classList.toggle("hidden", exp !== "lorentz");
+
+      document.getElementById("btnToggleCore").classList.toggle("hidden", exp !== "solenoid");
+      document.getElementById("btnFlipMagnet").classList.toggle("hidden", exp !== "lorentz");
+
+      updateUI();
+    }
+
+    function togglePower() {
+      if (state.current > 0) {
+        state.savedCurrent = state.current;
+        state.current = 0;
+      } else {
+        state.current = state.savedCurrent || 5.0;
+      }
+      sliderCurrent.value = state.current;
+      updateUI();
+    }
+
+    function reverseCurrent() {
+      state.polarity *= -1;
+      updateUI();
+    }
+
+    function toggleSoftIronCore() {
+      state.muR = state.muR === 1 ? 50 : 1;
+      const btn = document.getElementById("btnToggleCore");
+      btn.textContent =
+        state.muR === 1
+          ? "🧲 Insert Soft Iron Core (μᵣ = 50)"
+          : "🧲 Remove Iron Core (Air μᵣ = 1)";
+      updateUI();
+    }
+
+    function flipHorseshoeMagnet() {
+      state.magnetPolarity *= -1;
+      updateUI();
+    }
+
+    function updateUI() {
+      const { experiment, current, polarity, compassRadiusCm, turns, muR, extB, magnetPolarity } = state;
+
+      document.getElementById("valCurrent").textContent = `${current.toFixed(1)} A`;
+      document.getElementById("valTurns").textContent = `${turns} turns`;
+      document.getElementById("valExtB").textContent = `${extB.toFixed(2)} T`;
+      document.getElementById("valRadius").textContent = `${compassRadiusCm.toFixed(1)} cm`;
+
+      const pwrBtn = document.getElementById("btnTogglePower");
+      if (current > 0) {
+        pwrBtn.textContent = `⚡ Switch: ON (${current.toFixed(1)} A)`;
+        pwrBtn.className = "rounded-lg bg-blue-600 px-5 py-2 text-sm font-bold text-white hover:bg-blue-700";
+      } else {
+        pwrBtn.textContent = "🔌 Switch: OFF (0.0 A)";
+        pwrBtn.className = "rounded-lg bg-slate-600 px-5 py-2 text-sm font-bold text-white hover:bg-slate-700";
+      }
+
+      const ruleBadge = document.getElementById("ruleBadge");
+
+      if (experiment === "wire") {
+        document.getElementById("expTitle").textContent =
+          "1. Magnetic Field Due to a Straight Current-Carrying Conductor";
+        document.getElementById("expSubtitle").textContent =
+          "Drag the magnetic compass around the vertical wire to verify concentric circular field lines (Right-Hand Thumb Rule)";
+        document.getElementById("graphHeader").textContent = "📈 Field Strength (B) vs Distance (r)";
+
+        const rMeters = compassRadiusCm / 100;
+        const bMicroTesla = ((MU0 * current) / (2 * Math.PI * rMeters)) * 1e6;
+
+        document.getElementById("card1Title").textContent = "MAGNETIC FIELD AT COMPASS";
+        document.getElementById("card1Val").textContent = `${bMicroTesla.toFixed(1)} μT`;
+        document.getElementById("card1Sub").textContent = "B = (μ₀ · I) / (2π · r)";
+        document.getElementById("card1Hint").textContent = "Inversely proportional to r";
+
+        document.getElementById("card2Title").textContent = "FIELD LINE DIRECTION";
+        document.getElementById("card2Val").textContent =
+          current === 0 ? "None (I = 0)" : polarity === 1 ? "Anti-Clockwise" : "Clockwise";
+        document.getElementById("card2Sub").textContent = "Top-down view";
+        document.getElementById("card2Hint").textContent = "Right-Hand Thumb Rule";
+
+        document.getElementById("card3Title").textContent = "CURRENT DIRECTION";
+        document.getElementById("card3Val").textContent =
+          current === 0 ? "0.0 A (Off)" : polarity === 1 ? "Upward (↑)" : "Downward (↓)";
+
+        document.getElementById("derivTitle1").textContent = "1. Straight Conductor Magnetic Field:";
+        document.getElementById("derivFormula1").textContent = "B = (μ₀ · I) / (2π · r)";
+        document.getElementById("derivSub1").textContent =
+          `= (4π × 10⁻⁷ × ${current.toFixed(1)}) / (2π × ${rMeters.toFixed(3)})`;
+        document.getElementById("derivRes1").textContent = `= ${bMicroTesla.toFixed(2)} μT`;
+
+        document.getElementById("ncertInsightBox").innerHTML =
+          "<strong>Right-Hand Thumb Rule:</strong> Imagine holding the straight conductor in your right hand with your thumb pointing in the direction of current. Your fingers wrap around the conductor in the direction of the magnetic field lines.";
+
+        ruleBadge.textContent =
+          current === 0
+            ? "Circuit Open: No current → Compass aligns with Earth's North"
+            : polarity === 1
+            ? "Right-Hand Thumb Rule: Thumb UP (↑) → Field curls ANTI-CLOCKWISE"
+            : "Right-Hand Thumb Rule: Thumb DOWN (↓) → Field curls CLOCKWISE";
+      } else if (experiment === "solenoid") {
+        document.getElementById("expTitle").textContent =
+          "2. Magnetic Field Inside a Current-Carrying Solenoid";
+        document.getElementById("expSubtitle").textContent =
+          "Drag the compass inside or around the solenoid and insert a Soft Iron Core to create a powerful electromagnet";
+        document.getElementById("graphHeader").textContent = "📈 Axial Field (B) vs Current (I)";
+
+        const L = 0.2;
+        const n = turns / L;
+        const bMilliTesla = MU0 * muR * n * current * 1000;
+
+        document.getElementById("card1Title").textContent = "SOLENOID CORE FIELD (B)";
+        document.getElementById("card1Val").textContent = `${bMilliTesla.toFixed(2)} mT`;
+        document.getElementById("card1Sub").textContent = "B = μ₀ · μᵣ · n · I";
+        document.getElementById("card1Hint").textContent = `Turn density n = ${n} turns/m`;
+
+        document.getElementById("card2Title").textContent = "MAGNETIC POLES";
+        document.getElementById("card2Val").textContent =
+          current === 0 ? "Unmagnetized" : polarity === 1 ? "Left: S | Right: N" : "Left: N | Right: S";
+        document.getElementById("card2Sub").textContent = "Clock Face Rule";
+        document.getElementById("card2Hint").textContent = "Uniform field inside core";
+
+        document.getElementById("card3Title").textContent = "CORE MATERIAL";
+        document.getElementById("card3Val").textContent = muR > 1 ? "Soft Iron (μᵣ=50)" : "Air Core (μᵣ=1)";
+
+        document.getElementById("derivTitle1").textContent = "1. Solenoid Axial Magnetic Field:";
+        document.getElementById("derivFormula1").textContent = "B = μ₀ · μᵣ · (N / L) · I";
+        document.getElementById("derivSub1").textContent =
+          `= (4π × 10⁻⁷) × ${muR} × ${n} × ${current.toFixed(1)}`;
+        document.getElementById("derivRes1").textContent = `= ${bMilliTesla.toFixed(3)} mT`;
+
+        document.getElementById("ncertInsightBox").innerHTML =
+          "<strong>Solenoid Properties:</strong> Field lines inside a solenoid are parallel straight lines, indicating a <strong>uniform magnetic field</strong>. Inserting a soft iron rod creates a strong temporary <strong>electromagnet</strong>.";
+
+        ruleBadge.textContent =
+          current === 0
+            ? "Switch OFF: Soft iron loses magnetism immediately"
+            : polarity === 1
+            ? "Clock Face Rule: Right face anti-clockwise → NORTH Pole | Left face → SOUTH Pole"
+            : "Clock Face Rule: Left face anti-clockwise → NORTH Pole | Right face → SOUTH Pole";
+      } else {
+        document.getElementById("expTitle").textContent =
+          "3. Force on a Current-Carrying Conductor in a Magnetic Field";
+        document.getElementById("expSubtitle").textContent =
+          "Observe the copper rod kick outward or inward inside the horseshoe magnet (Fleming's Left-Hand Rule)";
+        document.getElementById("graphHeader").textContent = "📈 Magnetic Force (F) vs Current (I)";
+
+        const rodLenM = 0.15;
+        const forceN = extB * current * rodLenM;
+        const netDir = polarity * magnetPolarity; // +1 kicks Right, -1 kicks Left
+
+        document.getElementById("card1Title").textContent = "MAGNETIC FORCE (F)";
+        document.getElementById("card1Val").textContent = `${forceN.toFixed(3)} N`;
+        document.getElementById("card1Sub").textContent = "F = B · I · L · sin(90°)";
+        document.getElementById("card1Hint").textContent = "Conductor length L = 0.15 m";
+
+        document.getElementById("card2Title").textContent = "DEFLECTION DIRECTION";
+        document.getElementById("card2Val").textContent =
+          current === 0 ? "At Rest (0°)" : netDir > 0 ? "Kicks Right (→)" : "Kicks Left (←)";
+        document.getElementById("card2Sub").textContent = "Perpendicular to B and I";
+        document.getElementById("card2Hint").textContent = "Fleming's Left-Hand Rule";
+
+        document.getElementById("card3Title").textContent = "FIELD & CURRENT";
+        document.getElementById("card3Val").textContent =
+          `${magnetPolarity === 1 ? "B: Down (↓)" : "B: Up (↑)"} | ${polarity === 1 ? "I: Into Page" : "I: Out"}`;
+
+        document.getElementById("derivTitle1").textContent = "1. Lorentz Magnetic Force Formula:";
+        document.getElementById("derivFormula1").textContent = "F = B · I · L · sin(θ)";
+        document.getElementById("derivSub1").textContent =
+          `= ${extB.toFixed(2)} T × ${current.toFixed(1)} A × 0.15 m × sin(90°)`;
+        document.getElementById("derivRes1").textContent = `= ${forceN.toFixed(3)} Newtons`;
+
+        document.getElementById("ncertInsightBox").innerHTML =
+          "<strong>Fleming's Left-Hand Rule:</strong> Stretch the thumb, forefinger, and middle finger of your left hand mutually perpendicular. If <strong>Forefinger = Field (B)</strong> and <strong>Middle Finger = Current (I)</strong>, then <strong>Thumb = Force / Motion (F)</strong>.";
+
+        ruleBadge.textContent =
+          current === 0
+            ? "No Current: Zero magnetic force acting on copper conductor"
+            : netDir > 0
+            ? "Fleming's Left-Hand Rule: Force pushes conductor RIGHT (→)"
+            : "Fleming's Left-Hand Rule: Force pushes conductor LEFT (←)";
+      }
+    }
+
+    // Canvas Pointer Dragging for Compass
+    function getCanvasCoords(evt) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+      const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY,
+      };
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      const pos = getCanvasCoords(e);
+      if (state.experiment === "wire") {
+        const cx = 540;
+        const cy = 205;
+        const rPx = 45 + (state.compassRadiusCm / 12) * 145;
+        const compX = cx + Math.cos(state.compassAngleAroundWire) * rPx;
+        const compY = cy + Math.sin(state.compassAngleAroundWire) * (rPx * 0.62);
+        if (Math.hypot(pos.x - compX, pos.y - compY) < 42) {
+          state.draggingCompass = true;
+          canvas.style.cursor = "grabbing";
+        }
+      } else if (state.experiment === "solenoid") {
+        if (Math.hypot(pos.x - state.solCompassX, pos.y - state.solCompassY) < 42) {
+          state.draggingCompass = true;
+          canvas.style.cursor = "grabbing";
+        }
+      }
+    });
+
+    window.addEventListener("pointermove", (e) => {
+      if (!state.draggingCompass) return;
+      const pos = getCanvasCoords(e);
+      if (state.experiment === "wire") {
+        const cx = 540;
+        const cy = 205;
+        const dx = pos.x - cx;
+        const dy = (pos.y - cy) / 0.62;
+        state.compassAngleAroundWire = Math.atan2(dy, dx);
+        const distPx = Math.hypot(dx, dy);
+        const cm = Math.max(2, Math.min(12, ((distPx - 45) / 145) * 12));
+        state.compassRadiusCm = Math.round(cm * 2) / 2;
+        sliderRadius.value = state.compassRadiusCm;
+        updateUI();
+      } else if (state.experiment === "solenoid") {
+        state.solCompassX = Math.max(60, Math.min(1040, pos.x));
+        state.solCompassY = Math.max(40, Math.min(345, pos.y));
+      }
+    });
+
+    window.addEventListener("pointerup", () => {
+      state.draggingCompass = false;
+      canvas.style.cursor = "grab";
+    });
+
+    function drawArrowHead(x, y, angle, color, size = 8) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(size, 0);
+      ctx.lineTo(-size * 0.7, -size * 0.55);
+      ctx.lineTo(-size * 0.7, size * 0.55);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawCompass(x, y, needleAngle, label = "Drag Compass") {
+      ctx.save();
+      ctx.translate(x, y);
+
+      // Outer shadow & bezel
+      ctx.fillStyle = "#ffffff";
+      ctx.strokeStyle = "#334155";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, 26, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Cardinal ticks
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "bold 8px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("N", 0, -17);
+
+      ctx.rotate(needleAngle);
+      // North Needle (Red)
+      ctx.fillStyle = "#dc2626";
+      ctx.beginPath();
+      ctx.moveTo(20, 0);
+      ctx.lineTo(0, -5.5);
+      ctx.lineTo(0, 5.5);
+      ctx.closePath();
+      ctx.fill();
+
+      // South Needle (Blue)
+      ctx.fillStyle = "#2563eb";
+      ctx.beginPath();
+      ctx.moveTo(-20, 0);
+      ctx.lineTo(0, -5.5);
+      ctx.lineTo(0, 5.5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Center brass pin
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath();
+      ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = "#475569";
+      ctx.font = "bold 11px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(label, x, y + 40);
+    }
+
+    // =========================================================================
+    // RENDERER 1: STRAIGHT CURRENT-CARRYING WIRE (OERSTED)
+    // =========================================================================
+    function renderWireExperiment() {
+      const { current, polarity, compassAngleAroundWire, compassRadiusCm, showFieldLines, showCurrentFlow } = state;
+      const cx = 540;
+      const cy = 205;
+
+      // 1. Cardboard Horizontal Plane (3D Perspective)
+      ctx.fillStyle = "#fef3c7";
+      ctx.strokeStyle = "#d97706";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(270, 125);
+      ctx.lineTo(810, 125);
+      ctx.lineTo(900, 290);
+      ctx.lineTo(180, 290);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#92400e";
+      ctx.font = "bold 11px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("Horizontal Cardboard Plane", 205, 278);
+
+      // 2. Lower Half of Vertical Copper Wire (below cardboard)
+      ctx.strokeStyle = "#b45309";
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx, 355);
+      ctx.stroke();
+
+      // 3. Concentric Circular Magnetic Field Lines
+      if (showFieldLines && current > 0) {
+        const radii = [55, 95, 138, 182];
+        radii.forEach((rx, idx) => {
+          const ry = rx * 0.62;
+          const alpha = Math.max(0.25, (current / 10) * (1 - idx * 0.16));
+          ctx.strokeStyle = `rgba(5, 150, 105, ${alpha})`;
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Directional arrows on front & back of ellipse
+          const arrowAngleFront = polarity === 1 ? 0 : Math.PI;
+          const arrowAngleBack = polarity === 1 ? Math.PI : 0;
+          drawArrowHead(cx, cy + ry, arrowAngleFront, "#059669", 7);
+          drawArrowHead(cx, cy - ry, arrowAngleBack, "#059669", 7);
+        });
+      }
+
+      // 4. Upper Half of Vertical Copper Wire (above cardboard)
+      ctx.strokeStyle = "#ea580c";
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(cx, 35);
+      ctx.lineTo(cx, cy);
+      ctx.stroke();
+
+      // Animated Current Charges along Vertical Wire
+      if (showCurrentFlow && current > 0) {
+        ctx.fillStyle = "#f59e0b";
+        for (let k = 0; k < 5; k++) {
+          const t = (state.animPhase + k * 0.2) % 1;
+          const wy = polarity === 1 ? 355 - t * 320 : 35 + t * 320;
+          ctx.beginPath();
+          ctx.arc(cx, wy, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Big Current Direction Arrow beside wire
+        const dirY = polarity === 1 ? -1 : 1;
+        drawArrowHead(cx + 22, 100 + dirY * 25, polarity === 1 ? -Math.PI / 2 : Math.PI / 2, "#d97706", 10);
+        ctx.fillStyle = "#b45309";
+        ctx.font = "bold 12px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(`I = ${current.toFixed(1)} A (${polarity === 1 ? "UP" : "DOWN"})`, cx + 34, 104);
+      }
+
+      // 5. Draggable Magnetic Compass on Cardboard Plane
+      const rPx = 45 + (compassRadiusCm / 12) * 145;
+      const compX = cx + Math.cos(compassAngleAroundWire) * rPx;
+      const compY = cy + Math.sin(compassAngleAroundWire) * (rPx * 0.62);
+
+      // Radius dashed line
+      ctx.strokeStyle = "#64748b";
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(compX, compY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Tangent angle in screen coordinates
+      const tx = -Math.sin(compassAngleAroundWire) * polarity;
+      const ty = Math.cos(compassAngleAroundWire) * 0.62 * polarity;
+      const needleAngle = current === 0 ? -Math.PI / 2 : Math.atan2(ty, tx);
+      const deg = Math.round(((needleAngle * 180) / Math.PI + 360) % 360);
+      document.getElementById("card4Val").textContent = `${deg}°`;
+
+      drawCompass(compX, compY, needleAngle, `r = ${compassRadiusCm.toFixed(1)} cm`);
+    }
+
+    // =========================================================================
+    // RENDERER 2: SOLENOID ELECTROMAGNET
+    // =========================================================================
+    function renderSolenoidExperiment() {
+      const { current, turns, muR, polarity, showFieldLines, showCurrentFlow, solCompassX, solCompassY } = state;
+      const cx = 550;
+      const cy = 200;
+      const solW = 340;
+      const solH = 84;
+      const leftX = cx - solW / 2;
+      const rightX = cx + solW / 2;
+
+      const fieldStrength = (current / 10) * (turns / 12) * (muR > 1 ? 1.8 : 1);
+
+      // 1. Magnetic Field Lines
+      if (showFieldLines && current > 0) {
+        const lineAlpha = Math.min(0.95, 0.35 + fieldStrength * 0.45);
+        ctx.strokeStyle = `rgba(5, 150, 105, ${lineAlpha})`;
+        ctx.lineWidth = 2;
+
+        [-26, -13, 0, 13, 26].forEach((offset) => {
+          const yIn = cy + offset;
+          ctx.beginPath();
+          ctx.moveTo(leftX - 18, yIn);
+          ctx.lineTo(rightX + 18, yIn);
+          ctx.stroke();
+
+          drawArrowHead(cx, yIn, polarity === 1 ? 0 : Math.PI, "#059669", 7);
+
+          if (offset !== 0) {
+            const loopH = (Math.abs(offset) / 26) * 128 + 56;
+            const sign = offset < 0 ? -1 : 1;
+            ctx.beginPath();
+            ctx.moveTo(rightX + 18, yIn);
+            ctx.bezierCurveTo(
+              rightX + 135,
+              cy + sign * loopH,
+              leftX - 135,
+              cy + sign * loopH,
+              leftX - 18,
+              yIn
+            );
+            ctx.stroke();
+
+            drawArrowHead(cx, cy + sign * (loopH * 0.75), polarity === 1 ? Math.PI : 0, "#059669", 7);
+          }
+        });
+      }
+
+      // 2. Soft Iron Core
+      if (muR > 1) {
+        const coreGrad = ctx.createLinearGradient(0, cy - 30, 0, cy + 30);
+        coreGrad.addColorStop(0, "#64748b");
+        coreGrad.addColorStop(0.5, "#cbd5e1");
+        coreGrad.addColorStop(1, "#475569");
+        ctx.fillStyle = coreGrad;
+        ctx.strokeStyle = "#334155";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(leftX - 20, cy - 30, solW + 40, 60, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#0f172a";
+        ctx.font = "bold 12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("SOFT IRON CORE (μᵣ = 50)", cx, cy + 4);
+      }
+
+      // 3. Back & Front Solenoid Coils
+      const stepX = solW / turns;
+      ctx.strokeStyle = "#9a3412";
+      ctx.lineWidth = 4.5;
+      for (let i = 0; i < turns; i++) {
+        const x = leftX + i * stepX;
+        ctx.beginPath();
+        ctx.moveTo(x + stepX * 0.5, cy - solH / 2);
+        ctx.lineTo(x + stepX, cy + solH / 2);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "#ea580c";
+      ctx.lineWidth = 5.5;
+      for (let i = 0; i < turns; i++) {
+        const x = leftX + i * stepX;
+        ctx.beginPath();
+        ctx.moveTo(x, cy + solH / 2);
+        ctx.lineTo(x + stepX * 0.5, cy - solH / 2);
+        ctx.stroke();
+
+        if (showCurrentFlow && current > 0) {
+          drawArrowHead(
+            x + stepX * 0.25,
+            cy,
+            polarity === 1 ? -Math.PI / 2.2 : Math.PI / 1.8,
+            "#f59e0b",
+            6
+          );
+        }
+      }
+
+      // 4. Circuit Wires & Battery
+      ctx.strokeStyle = "#334155";
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(leftX, cy + solH / 2);
+      ctx.lineTo(leftX, 342);
+      ctx.lineTo(cx - 42, 342);
+      ctx.moveTo(rightX, cy + solH / 2);
+      ctx.lineTo(rightX, 342);
+      ctx.lineTo(cx + 42, 342);
+      ctx.stroke();
+
+      const posLeft = polarity === 1;
+      ctx.strokeStyle = posLeft ? "#dc2626" : "#2563eb";
+      ctx.lineWidth = posLeft ? 3.5 : 6.5;
+      ctx.beginPath();
+      ctx.moveTo(cx - 42, posLeft ? 324 : 332);
+      ctx.lineTo(cx - 42, posLeft ? 360 : 352);
+      ctx.stroke();
+
+      ctx.strokeStyle = !posLeft ? "#dc2626" : "#2563eb";
+      ctx.lineWidth = !posLeft ? 3.5 : 6.5;
+      ctx.beginPath();
+      ctx.moveTo(cx + 42, !posLeft ? 324 : 332);
+      ctx.lineTo(cx + 42, !posLeft ? 360 : 352);
+      ctx.stroke();
+
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "bold 14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(posLeft ? "+" : "−", cx - 58, 347);
+      ctx.fillText(!posLeft ? "+" : "−", cx + 58, 347);
+      ctx.font = "bold 12px sans-serif";
+      ctx.fillText(`DC Supply (${current.toFixed(1)} A)`, cx, 378);
+
+      // 5. Pole Badges
+      if (current > 0) {
+        const leftIsNorth = polarity === -1;
+        ctx.fillStyle = leftIsNorth ? "#dc2626" : "#2563eb";
+        ctx.beginPath();
+        ctx.roundRect(leftX - 58, cy - 17, 38, 34, 8);
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 15px sans-serif";
+        ctx.fillText(leftIsNorth ? "N" : "S", leftX - 39, cy + 5);
+
+        ctx.fillStyle = !leftIsNorth ? "#dc2626" : "#2563eb";
+        ctx.beginPath();
+        ctx.roundRect(rightX + 20, cy - 17, 38, 34, 8);
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.fillText(!leftIsNorth ? "N" : "S", rightX + 39, cy + 5);
+      }
+
+      // 6. Dipole Compass
+      const halfLen = 165;
+      const nx = cx + polarity * halfLen;
+      const sx = cx - polarity * halfLen;
+      let bx = polarity;
+      let by = 0;
+
+      if (!(Math.abs(solCompassX - cx) < halfLen && Math.abs(solCompassY - cy) < 42)) {
+        const dxN = solCompassX - nx;
+        const dyN = solCompassY - cy;
+        const rN = Math.max(Math.hypot(dxN, dyN), 25);
+        const dxS = solCompassX - sx;
+        const dyS = solCompassY - cy;
+        const rS = Math.max(Math.hypot(dxS, dyS), 25);
+        bx = dxN / Math.pow(rN, 3) - dxS / Math.pow(rS, 3);
+        by = dyN / Math.pow(rN, 3) - dyS / Math.pow(rS, 3);
+      }
+
+      const needleAngle = current === 0 ? -Math.PI / 2 : Math.atan2(by, bx);
+      const deg = Math.round(((needleAngle * 180) / Math.PI + 360) % 360);
+      document.getElementById("card4Val").textContent = `${deg}°`;
+      drawCompass(solCompassX, solCompassY, needleAngle, "Drag Compass");
+    }
+
+    // =========================================================================
+    // RENDERER 3: FORCE ON CURRENT-CARRYING CONDUCTOR (KICK-WIRE EXPERIMENT)
+    // =========================================================================
+    function renderLorentzExperiment(dt) {
+      const { current, polarity, extB, magnetPolarity, showFieldLines } = state;
+
+      // Update swinging rod angle smoothly
+      const targetAngle = (current / 10) * (extB / 1.0) * 0.58 * (polarity * magnetPolarity);
+      const springK = 28;
+      const damping = 6.5;
+      const accel = springK * (targetAngle - state.rodSwingAngle) - damping * state.rodSwingVel;
+      state.rodSwingVel += accel * dt;
+      state.rodSwingAngle += state.rodSwingVel * dt;
+
+      const deg = Math.round((state.rodSwingAngle * 180) / Math.PI);
+      document.getElementById("card4Val").textContent = `${deg}°`;
+
+      const cx = 550;
+      const pivotY = 65;
+      const rodLen = 195;
+
+      // 1. Overhead Suspension Stand
+      ctx.fillStyle = "#334155";
+      ctx.fillRect(cx - 90, 28, 180, 12);
+      ctx.fillRect(cx - 6, 40, 12, 25);
+
+      // 2. Horseshoe Magnet Poles (Top & Bottom)
+      const topIsNorth = magnetPolarity === 1;
+      // Magnet C-Yoke on left
+      ctx.fillStyle = "#475569";
+      ctx.fillRect(365, 130, 35, 225);
+
+      // Top Pole
+      ctx.fillStyle = topIsNorth ? "#dc2626" : "#2563eb";
+      ctx.fillRect(365, 130, 250, 44);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 16px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(topIsNorth ? "NORTH POLE (N)" : "SOUTH POLE (S)", 505, 158);
+
+      // Bottom Pole
+      ctx.fillStyle = !topIsNorth ? "#dc2626" : "#2563eb";
+      ctx.fillRect(365, 310, 250, 44);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(!topIsNorth ? "NORTH POLE (N)" : "SOUTH POLE (S)", 505, 338);
+
+      // 3. Uniform Vertical Magnetic Field Lines (N -> S)
+      if (showFieldLines) {
+        ctx.strokeStyle = "rgba(5, 150, 105, 0.55)";
+        ctx.lineWidth = 2;
+        for (let fx = 445; fx <= 595; fx += 30) {
+          ctx.beginPath();
+          ctx.moveTo(fx, 174);
+          ctx.lineTo(fx, 310);
+          ctx.stroke();
+          drawArrowHead(fx, 242, topIsNorth ? Math.PI / 2 : -Math.PI / 2, "#059669", 7);
+        }
+      }
+
+      // 4. Swinging Copper Conductor Rod
+      const endX = cx + Math.sin(state.rodSwingAngle) * rodLen;
+      const endY = pivotY + Math.cos(state.rodSwingAngle) * rodLen;
+
+      // Suspension Wires
+      ctx.strokeStyle = "#64748b";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, pivotY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+
+      // Copper Rod Cross-Section Circle
+      ctx.fillStyle = "#ea580c";
+      ctx.strokeStyle = "#7c2d12";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(endX, endY, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Current Symbol inside Rod: ⊗ (Into Page) or ⊙ (Out of Page)
+      ctx.strokeStyle = "#ffffff";
+      ctx.fillStyle = "#ffffff";
+      ctx.lineWidth = 2.5;
+      if (current > 0) {
+        if (polarity === 1) {
+          // Cross (Into page)
+          ctx.beginPath();
+          ctx.moveTo(endX - 6, endY - 6);
+          ctx.lineTo(endX + 6, endY + 6);
+          ctx.moveTo(endX + 6, endY - 6);
+          ctx.lineTo(endX - 6, endY + 6);
+          ctx.stroke();
+        } else {
+          // Dot (Out of page)
+          ctx.beginPath();
+          ctx.arc(endX, endY, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // 5. Lorentz Force Vector Arrow (F)
+      if (current > 0) {
+        const forceDir = polarity * magnetPolarity;
+        const fLen = 35 + (current / 10) * (extB / 1.0) * 75;
+        const fEndX = endX + forceDir * fLen;
+
+        ctx.strokeStyle = "#dc2626";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(fEndX, endY);
+        ctx.stroke();
+        drawArrowHead(fEndX, endY, forceDir > 0 ? 0 : Math.PI, "#dc2626", 9);
+
+        ctx.fillStyle = "#b91c1c";
+        ctx.font = "bold 12px sans-serif";
+        ctx.textAlign = forceDir > 0 ? "left" : "right";
+        ctx.fillText(`Force F`, fEndX + forceDir * 10, endY + 4);
+      }
+
+      // Legend Callout on Right
+      ctx.fillStyle = "#f8fafc";
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(720, 145, 290, 125, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "bold 12px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("Fleming's Left-Hand Rule Guide:", 736, 170);
+      ctx.font = "11px sans-serif";
+      ctx.fillStyle = "#059669";
+      ctx.fillText(`• Forefinger (Field B): ${topIsNorth ? "Downward (N → S)" : "Upward (N → S)"}`, 736, 194);
+      ctx.fillStyle = "#d97706";
+      ctx.fillText(`• Middle Finger (Current I): ${polarity === 1 ? "Into Page (⊗)" : "Out of Page (⊙)"}`, 736, 216);
+      ctx.fillStyle = "#dc2626";
+      ctx.fillText(`• Thumb (Force F): ${current === 0 ? "None (I = 0)" : polarity * magnetPolarity > 0 ? "Rightward (→)" : "Leftward (←)"}`, 736, 238);
+    }
+
+    // =========================================================================
+    // LIVE GRAPH RENDERER (RIGHT-HAND BOTTOM CARD)
+    // =========================================================================
+    function renderGraph() {
+      const w = graphCanvas.width;
+      const h = graphCanvas.height;
+      const padL = 38;
+      const padR = 14;
+      const padT = 16;
+      const padB = 22;
+      const plotW = w - padL - padR;
+      const plotH = h - padT - padB;
+
+      gCtx.clearRect(0, 0, w, h);
+
+      // Grid lines
+      gCtx.strokeStyle = "#f1f5f9";
+      gCtx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = padT + (plotH / 4) * i;
+        gCtx.beginPath();
+        gCtx.moveTo(padL, y);
+        gCtx.lineTo(w - padR, y);
+        gCtx.stroke();
+      }
+
+      // Axes
+      gCtx.strokeStyle = "#94a3b8";
+      gCtx.lineWidth = 1.5;
+      gCtx.beginPath();
+      gCtx.moveTo(padL, padT);
+      gCtx.lineTo(padL, h - padB);
+      gCtx.lineTo(w - padR, h - padB);
+      gCtx.stroke();
+
+      gCtx.fillStyle = "#64748b";
+      gCtx.font = "bold 10px sans-serif";
+      gCtx.textAlign = "center";
+
+      if (state.experiment === "wire") {
+        // Plot B vs r (2 cm to 12 cm)
+        gCtx.fillText("Distance r (2 cm → 12 cm)", padL + plotW / 2, h - 5);
+        gCtx.strokeStyle = "#059669";
+        gCtx.lineWidth = 2.5;
+        gCtx.beginPath();
+        const maxB = 100; // 100 uT scale
+        for (let r = 2; r <= 12; r += 0.25) {
+          const bVal = ((MU0 * state.current) / (2 * Math.PI * (r / 100))) * 1e6;
+          const x = padL + ((r - 2) / 10) * plotW;
+          const y = h - padB - Math.min(1, bVal / maxB) * plotH;
+          if (r === 2) gCtx.moveTo(x, y);
+          else gCtx.lineTo(x, y);
+        }
+        gCtx.stroke();
+
+        // Active marker dot
+        const curB = ((MU0 * state.current) / (2 * Math.PI * (state.compassRadiusCm / 100))) * 1e6;
+        const cx = padL + ((state.compassRadiusCm - 2) / 10) * plotW;
+        const cy = h - padB - Math.min(1, curB / maxB) * plotH;
+        gCtx.fillStyle = "#ea580c";
+        gCtx.beginPath();
+        gCtx.arc(cx, cy, 5, 0, Math.PI * 2);
+        gCtx.fill();
+      } else if (state.experiment === "solenoid") {
+        // Plot B vs Current I (0 to 10 A)
+        gCtx.fillText("Current I (0 A → 10 A)", padL + plotW / 2, h - 5);
+        const n = state.turns / 0.2;
+        const maxB = MU0 * state.muR * n * 10 * 1000 || 1;
+        gCtx.strokeStyle = "#2563eb";
+        gCtx.lineWidth = 2.5;
+        gCtx.beginPath();
+        gCtx.moveTo(padL, h - padB);
+        gCtx.lineTo(w - padR, padT);
+        gCtx.stroke();
+
+        const cx = padL + (state.current / 10) * plotW;
+        const cy = h - padB - (state.current / 10) * plotH;
+        gCtx.fillStyle = "#ea580c";
+        gCtx.beginPath();
+        gCtx.arc(cx, cy, 5, 0, Math.PI * 2);
+        gCtx.fill();
+      } else {
+        // Plot Force F vs Current I (0 to 10 A)
+        gCtx.fillText("Current I (0 A → 10 A)", padL + plotW / 2, h - 5);
+        gCtx.strokeStyle = "#dc2626";
+        gCtx.lineWidth = 2.5;
+        gCtx.beginPath();
+        gCtx.moveTo(padL, h - padB);
+        gCtx.lineTo(w - padR, padT);
+        gCtx.stroke();
+
+        const cx = padL + (state.current / 10) * plotW;
+        const cy = h - padB - (state.current / 10) * plotH;
+        gCtx.fillStyle = "#2563eb";
+        gCtx.beginPath();
+        gCtx.arc(cx, cy, 5, 0, Math.PI * 2);
+        gCtx.fill();
+      }
+    }
+
+    function resetLab() {
+      state.current = 5.0;
+      state.savedCurrent = 5.0;
+      state.polarity = 1;
+      state.compassAngleAroundWire = 0;
+      state.compassRadiusCm = 5.0;
+      state.turns = 12;
+      state.muR = 1;
+      state.solCompassX = 550;
+      state.solCompassY = 90;
+      state.extB = 0.40;
+      state.magnetPolarity = 1;
+      state.rodSwingAngle = 0;
+      state.rodSwingVel = 0;
+      state.showFieldLines = true;
+      state.showCurrentFlow = true;
+
+      sliderCurrent.value = 5.0;
+      sliderRadius.value = 5.0;
+      sliderTurns.value = 12;
+      sliderExtB.value = 0.40;
+      document.getElementById("chkFieldLines").checked = true;
+      document.getElementById("chkCurrentFlow").checked = true;
+      document.getElementById("btnToggleCore").textContent = "🧲 Insert Soft Iron Core (μᵣ = 50)";
+
+      updateUI();
+    }
+
+    let lastTime = performance.now();
+    function loop(now) {
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+
+      if (state.current > 0) {
+        state.animPhase = (state.animPhase + dt * (state.current / 10) * 1.2) % 1;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (state.experiment === "wire") renderWireExperiment();
+      else if (state.experiment === "solenoid") renderSolenoidExperiment();
+      else renderLorentzExperiment(dt);
+
+      renderGraph();
+      requestAnimationFrame(loop);
+    }
+
+    updateUI();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
